@@ -1,0 +1,23 @@
+# Ignore CRLF line endings in all files
+*.* text=auto eol=lf
+# Text files (manual)
+*.bat text eol=crlf
+*.c text diff=cpp
+*.cmd text eol=crlf
+*.cpp text diff=cpp
+*.diff -text
+*.h text diff=cpp
+*.hpp text diff=cpp
+*.patch -text
+*.sh text eol=lf
+*.py text eol=lf
+# Binary files
+# LFS
+# Ignore line ending configurations
+*~
+# Ignore all .pyc files
+*.pyc
+*.pyo
+# Ignore all .pyo files
+*__pycache__/
+assets/** filter=lfs diff=lfs merge=lfs -text

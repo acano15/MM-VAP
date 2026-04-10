@@ -1,0 +1,9 @@
+[submodule "external/TalkNet-ASD"]
+	path = external/TalkNet-ASD
+	url = https://github.com/TaoRuijie/TalkNet-ASD.git
+[submodule "external/av_hubert"]
+	path = external/av_hubert
+	url = https://github.com/facebookresearch/av_hubert.git
+[submodule "external/whisper-flamingo"]
+	path = external/whisper-flamingo
+	url = https://github.com/roudimit/whisper-flamingo.git

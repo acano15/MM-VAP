@@ -1,0 +1,14 @@
+image_processing:
+  buffer_length: 0.5
+  use_gray: True
+  normalize: True
+  width: ${general.width}
+  height: ${general.height}
+  channels: ${general.channels}
+  face_missing_allowed_percentage: 40
+audio_processing:
+  buffer_length: 0.25
+  missing_allowed: 0.01
+  audio_language: EN
+  silence_thld: 0.55
+  speech_pad_ms: 30

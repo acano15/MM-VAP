@@ -1,0 +1,323 @@
+freeze: true
+pretrained: true
+
+encoder: &Encoder
+  pretrained: true
+  output_layer: 1
+  cross_layers: 3
+  name: cpc
+  frame_hz: 25
+  freeze: ${model.freeze}
+  # downsample:
+  #   kernel: [26]
+  #   stride: [1]
+  #   dilation: [1]
+  #   activation: "GELU"
+  downsample:
+    kernel: [11]
+    stride: [4]
+    dilation: [1]
+    activation: "GELU"
+  cpc:
+    model_path: "asset/cpc/60k_epoch4-d0f474de.pt"
+  wav2vec:
+    type: "mms"
+  hubert:
+    type: "hubert_jp"
+
+LoRA: &LoRA
+  depth: 1 # number of layers to insert LoRA modules into {1: attention, 2:Linear}
+  rank: 8
+  alpha: 16
+  dropout: 0.1
+  target_modules: ["q_proj", "v_proj", "k_proj", "o_proj", "fc1", "fc2"]
+  task_type: "FEATURE_EXTRACTION"
+
+backbone: &Backbone
+  use: true                       # true to replace audio+face encoders
+  use_lora: true
+  type: whisperflamingo
+  freeze: ${model.freeze}
+  output_dim: 256
+  use_video: true
+  TalkNet:
+    use_lora: ${model.backbone.use_lora}
+    use_video: true
+    pretrained: true
+    output_dim: ${model.backbone.output_dim}
+    freeze: ${model.freeze}
+    model_path: "asset/asd/pretrain_TalkSet.model"
+    LoRA:
+      <<: *LoRA
+      rank: 16
+      alpha: 16
+      target_modules: ["linear1", "linear2", "out_proj", "FC", "conv1", "conv2", "conv1a", "conv2a", "conv1b", "conv2b"]
+  WhisperFlamingo:
+    use_lora: ${model.backbone.use_lora}
+    pretrained: true
+    output_dim: ${model.backbone.output_dim}
+    freeze: ${model.freeze}
+    model_type: "small"           # small | medium | large-v2 | en-x_small ...
+    av_fusion: null            # lip-reader | None
+    av_fusion_method: "cross_attention"  # cross_attention | self_attention | concatenation
+    use_av_hubert_encoder: 1          # 0 = off, 1 = use AV-HuBERT
+    audio_model_path: "${repo_root:}/pretrained_models/whisper_flamingo/whisper-flamingo_en-x_small.pt"  # checkpoint file
+    video_model_path: "${repo_root:}/pretrained_models/whisper_flamingo/large_noise_pt_noise_ft_433h_only_weights.pt"  # checkpoint file
+    av_hubert_path: "${repo_root:}/external/av_hubert"
+    download_root: "${repo_root:}/pretrained_models/whisper_flamingo/"
+    device: "cuda" #"mps"
+    use_fp16: false
+    n_state: 768
+    n_head: 8
+    cross_attention:
+      n_state: 768
+      n_head: 12
+      n_mlp: 3072 #n_state * 4
+      n_layer: 12
+      last_layer_features: 115200
+    self_attention:
+      n_state: 1536
+      n_head: 12
+      n_mlp: 6144 #n_state * 4
+      n_layer: 12
+      last_layer_features: 115200
+    LoRA:
+      <<: *LoRA
+      rank: 16
+      alpha: 8
+      target_modules: ["query", "key", "value", "out", "q_proj", "k_proj", "v_proj", "out_proj", "fc1", "fc2", "proj_fusion", "video_projection", "proj", "post_extract_proj"]
+  CPC3DResNet:
+    use_lora: true
+    pretrained: true
+    output_dim: ${model.backbone.output_dim}
+    freeze: true
+    av_fusion_method: "cross_attention"  # cross_attention | self_attention | concatenation
+    audio_model_path: ${model.encoder.cpc.model_path}  # checkpoint file
+    context_limit_cpc_sec: -1
+    frame_hz: ${model.encoder.frame_hz}
+    only_feature_extractor: true
+    device: "cuda" #"mps"
+    use_fp16: false
+    n_state: 256
+    n_head: 8
+    dropout: 0.1
+    cross_attention:
+      n_state: 256
+      n_head: 8
+      n_mlp: 1024 #n_state * 4
+      n_layer: 2
+    self_attention:
+      n_state: 512
+      n_head: 8
+      n_mlp: 1024 #n_state * 4
+      n_layer: 2
+    LoRA:
+      <<: *LoRA
+      rank: 8
+      alpha: 8
+      target_modules: ["video_proj","cross_attn.out_proj","mlp.0","mlp.2","proj_fusion","resnet3d.fc"]
+
+model_kwargs: &model_kwargs
+  GRU:
+    dff_k: 3
+    batch_first: True
+    bias: True
+  LSTM:
+    dff_k: 3
+    batch_first: True
+  CNN: 
+    kernel: 3
+    stride: 2
+    padding: 1
+  Transformer:
+    num_heads: 4
+    dff_k: 3
+    resnet: False
+    activation: "GELU"
+    use_pos_emb: false  # false == AliBI
+    max_context: null # no max context if use_pos_emb=false
+    use_pre_ln: true # Pre-LN Transformer
+  Conformer:
+    num_heads: 4
+    dff_k: 1
+    use_pos_emb: false  # false == AliBI
+    convolution_first: false
+    conv_kernel_size: 3
+
+audio_module: &AudioModule
+  type: 'transformer' #transformer, cnn, lstm, gru, conformer
+  input_size: 256
+  num_layers: 2
+  dropout: 0.4
+  model_kwargs:
+    <<: *model_kwargs
+
+non_verbal_module: &NonVarbalModule
+  type: 'transformer' #transformer, cnn, lstm, gru, conformer
+  input_size: 64
+  num_layers: 2
+  dropout: 0.4
+  model_kwargs:
+    <<: *model_kwargs
+
+audio_cond:
+  use_module: true
+  freeze_encoder: ${model.freeze}
+  encoder:
+    <<: *Encoder
+    use_module: false
+    module:
+      use_module: false
+      <<: *AudioModule
+  backbone:
+    <<: *Backbone
+  encoder_separated_audio:
+    use_module: true
+    user1_input: false
+    user2_input: true
+    <<: *Encoder
+    user_1: 
+      module:
+        use_module: false
+        <<: *AudioModule
+    user_2: 
+      module:
+        use_module: false
+        <<: *AudioModule
+  va_cond:
+    use_module: true
+    output_size: 256
+    use_history: true
+    history_bins: 5
+  audio_module:
+    use_module: true
+    <<: *AudioModule
+
+non_verbal_cond:
+  use_module: true
+  user1_input: false
+  user2_input: true
+  gaze: 
+    use_module: true
+    input_size: 2 #without confidence score
+    gaze_module:
+      use_module: false
+      <<: *NonVarbalModule
+  au: 
+    use_module: true
+    input_size: 17 #without confidence score
+    au_module:
+      use_module: false
+      <<: *NonVarbalModule
+  head: 
+    use_module: true
+    input_size: 3 #without confidence score
+    head_module:
+      use_module: false
+      <<: *NonVarbalModule
+  pose: 
+    use_module: false
+    input_size: 14 #without confidence score
+    pose_module:
+      use_module: false
+      <<: *NonVarbalModule
+  non_verbal_module:
+    use_module: true
+    type: 'transformer' #transformer, cnn, lstm, gru, conformer
+    input_size: null
+    num_layers: 2
+    dropout: 0.4
+    model_kwargs:
+      <<: *model_kwargs
+  face:
+    dim_face_encoder: 512
+    model_path: "asset/FormerDFER/DFER_encoder_weight_only.pt"
+    detector:
+      face_model_path: "asset/face_detector/mmod_human_face_detector.dat"
+      landmark_model_path: "asset/face_detector/shape_predictor_5_face_landmarks.dat"
+
+  linear:
+    output_size: 256
+
+
+main_module:
+  use_module: true
+  type: 'transformer' #transformer, cnn, lstm, gru, conformer
+  input_size: null
+  num_layers: 2
+  dropout: 0.4
+  model_kwargs:
+    <<: *model_kwargs
+
+vap:
+  type: 'discrete'
+  # type: 'independent'
+  # type: 'comparative'
+  bin_times: [.2, .4, .6, .8]
+  # bin_times: [.05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05]
+  pre_frames: 2
+  bin_threshold: 0.5
+  model_path: "asset/vap/vap_state_dict_eng_20hz_2500msec.pt"
+
+configuration:
+  # Training and data
+  use_deterministic: ${train.training_features.use_deterministic}
+  events_loss_weight: ${train.training_features.events_loss_weight}
+  sample_rate: ${data.sample_rate}
+  frame_hz: ${model.encoder.frame_hz}
+  bin_times: ${model.vap.bin_times}
+  encoder_type: ${model.encoder.name}
+
+  # Pretrained model paths
+  pretrained_vap: ${model.vap.model_path}
+  pretrained_cpc: ${model.encoder.cpc.model_path}
+  pretrained_face_encoder: ${model.non_verbal_cond.face.model_path}
+
+  # Encoder / Model parameters
+  freeze_encoder: ${model.audio_cond.freeze_encoder}
+  load_pretrained: ${model.encoder.pretrained}
+  only_feature_extraction: false
+  dim: ${model.audio_module.input_size}
+  channel_layers: ${model.encoder.output_layer}
+  cross_layers: ${model.encoder.cross_layers}
+  num_heads: ${model.model_kwargs.Transformer.num_heads}
+  dropout: ${model.audio_module.dropout}
+  context_limit: ${events.metric.min_context}
+  onishi: ${train.training_features.onishi}
+
+  # Non-verbal feature dimensions
+  dim_nonverbal: ${model.non_verbal_module.input_size}
+  dim_gaze: ${model.non_verbal_cond.gaze.input_size}
+  dim_head: ${model.non_verbal_cond.head.input_size}
+  dim_face: ${model.non_verbal_cond.au.input_size}
+  dim_body: ${model.non_verbal_cond.pose.input_size}
+
+  # Face & modality config
+  face_only: ${train.training_features.use_face_only}
+  use_face_encoder: ${train.training_features.use_face_encoder}
+  dim_face_encoder: ${model.non_verbal_cond.face.dim_face_encoder}
+  mode: ${train.training_features.mode}
+  multimodal: ${data.multimodal}
+
+  # Fixed / default scalar values
+  context_limit_cpc_sec: -1
+  lid_classify: 0
+  lid_classify_num_class: 3
+  lid_classify_adversarial: 0
+  lang_cond: false
+
+  # Backbone settings
+  use_backbone: ${train.training_features.use_backbone}
+  backbone: ${model.backbone}
+
+  # Additional alignment for existing references
+  freeze: ${model.freeze}
+  output_dim: ${model.backbone.output_dim}
+  n_state: ${model.backbone.WhisperFlamingo.n_state}
+  n_head: ${model.model_kwargs.Transformer.num_heads}
+  n_mlp: ${model.model_kwargs.Transformer.dff_k}
+  n_layer: ${model.audio_module.num_layers}
+  last_layer_features: ${model.backbone.output_dim}
+
+  # events
+  events_configuration: ${events.configuration}
