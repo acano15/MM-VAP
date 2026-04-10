@@ -1,3 +1,4 @@
+![Model pipeline](assets/img/model_pipeline.png)
 # README #
 
 Public code artifact for the paper associated with `Multimodal Voice Activity Projection for Turn-Taking in Social Robots with Voice-Activity-Related Pretrained Encoders`.
@@ -254,5 +255,11 @@ command to run if program contains helper info
 [MIT](https://choosealicense.com/licenses/mit/)
 
 ## Citation
+The paper corresponding to this repository is currently under review and will be made available soon. If you use this repository before the final manuscript is public, please contact the authors for the appropriate citation information.
 
-If you use this repository, cite the associated paper once the final bibliographic entry is available.
+## Contact
+
+For questions about the artifact, reproducibility, or the paper, contact:
+
+- `aantcan@alu.upo.es`
+- `contact@antoniocanomontes.com`
