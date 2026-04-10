@@ -1,0 +1,72 @@
+metric:
+  pad: 0.05
+  dur: 0.1
+  ipu_pause_time: 0.1
+  ipu_min_time: 1.0
+  pre_label_dur: 0.5
+  onset_dur: 0.2
+  audio_context_duration: 8.0
+  min_context: 3.0
+  max_time: 20
+  frame_hz: ${model.encoder.frame_hz}
+  equal_hold_shift: 1
+  prediction_region_time: 0.5
+
+SH:
+  post_onset_shift: 1          # frames after a new speaker starts (onset) to confirm a SHIFT
+  pre_offset_shift: 1          # frames before the previous speaker ends (offset) to confirm a SHIFT
+  post_onset_hold: 1           # frames after the same speaker starts again to confirm a HOLD
+  pre_offset_hold: 1           # frames before a silence ends to confirm a HOLD
+  non_shift_horizon: 2         # horizon (in seconds) after silence to say it's definitely not a shift
+  metric_pad: ${events.metric.pad}                  # extra padding around evaluation regions
+  metric_dur: ${events.metric.dur}                  # duration of evaluation segment
+  metric_pre_label_dur: ${events.metric.pre_label_dur} # time before label onset to include in evaluation
+  metric_onset_dur: ${events.metric.onset_dur}         # minimum speech duration after onset to count as valid
+  prediction_region_on_active: true  # allow model to predict SH even during ongoing speech
+
+BC:
+  max_duration_frames: ${events.metric.ipu_min_time}  # max BC length (short feedback only)
+  pre_silence_frames: 1.0     # required silence duration before BC onset
+  post_silence_frames: 2.0    # required silence duration after BC (listener stays quiet after feedback)
+  min_duration_frames: ${events.metric.onset_dur}     # minimum length of BC utterance after onset
+  metric_dur_frames: ${events.metric.onset_dur}       # evaluation window after BC onset
+  metric_pre_label_dur: ${events.metric.pre_label_dur} # window before onset included in evaluation
+  negative_pad_left_time: 1.0 # left-side padding to exclude false negatives around BC
+  negative_pad_right_time: 2.0 # right-side padding to exclude false negatives around BC
+
+LS:
+  onset_region_time: ${events.metric.onset_dur}   # time window after onset (speech start) used to check utterance length
+  onset_condition_time: 1.0                       # threshold (in seconds): if utterance continues ≥ this duration, classify as LONG; otherwise SHORT
+
+threshold:
+  SH: 0.5
+  SL: 0.5
+  S_pred: 0.3
+  OV_pred: 0.1
+  BC_pred: 0.1
+
+configuration:
+    bin_times: ${model.vap.bin_times}
+    frame_hz: ${events.metric.frame_hz}
+    min_context_time: ${events.metric.min_context}
+    metric_time: ${events.metric.onset_dur}
+    metric_pad_time: ${events.metric.pad}
+    max_time: ${events.metric.max_time}
+    equal_hold_shift: ${events.metric.equal_hold_shift}
+    prediction_region_time: ${events.metric.prediction_region_time}
+
+    sh_pre_cond_time: ${events.SH.pre_offset_shift}
+    sh_post_cond_time: ${events.SH.post_onset_shift}
+    sh_prediction_region_on_active: ${events.SH.prediction_region_on_active}
+
+    bc_pre_cond_time: ${events.BC.pre_silence_frames}
+    bc_post_cond_time: ${events.BC.post_silence_frames}
+    bc_max_duration: ${events.BC.max_duration_frames}
+    bc_negative_pad_left_time: ${events.BC.negative_pad_left_time}
+    bc_negative_pad_right_time: ${events.BC.negative_pad_right_time}
+
+    long_onset_region_time: ${events.LS.onset_region_time}
+    long_onset_condition_time: ${events.LS.onset_condition_time}
+
+    lid_classify: false
+    lid_classify_num_class: 3

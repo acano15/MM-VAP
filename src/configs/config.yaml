@@ -1,0 +1,257 @@
+defaults:
+  - _self_
+  - model: model
+  - events: events
+  - preprocessing: preprocessing
+  - logger: logger
+  - hydra: default
+  #- override hydra/job_logging: custom
+  - hparams_search: null
+  - recognition: face_detector
+
+general:
+  save: false
+  model_name: VAP
+  log_base_dir: ${dirname:${train.training_features.model_checkpoints_path}}/logs
+  use_seed: true
+  width: 112
+  height: 112
+  channels: 3
+  use_baseline: false
+
+dataset:
+  selected_dataset: NoXi
+  NoXi:
+    name: "NoXi+J"
+    extracted_folder: "noxi_extracted"
+    keyword: "Paris"
+  MMHRI:
+    name: "HRI_DB"
+    extracted_folder: "dataset_extracted"
+    keyword: null
+
+  dataset_selected: ${dataset[${dataset.selected_dataset}]}
+  linux_root_path: "/media/acano/DATA/DBs/MMDS/Audio-Video/${dataset.dataset_selected.name}"
+  windows_root_path: "C:/Users/admin/Desktop/CANO/4i/phd/datasets/MMDS/Audio-Video/${dataset.dataset_selected.name}"
+  root_path: ${select_platform_path:linux,${dataset.linux_root_path},windows,${dataset.windows_root_path}}
+  path: ${dataset.root_path}/data
+  extracted_path: ${dataset.root_path}/${dataset.dataset_selected.extracted_folder}
+
+info:
+  debug: false
+  dir_name: null
+
+train:
+  training_features:
+    trial_count: 1 # number os seeds
+    use_deterministic: ${general.use_seed}
+    mode: 1 # 0, 1, 2, 3
+    onishi: false
+    use_face_only: false
+    use_face_encoder: false
+    use_backbone: true
+    events_loss_weight: 0.3
+    multimodal: false
+    use_multiprocess: false
+    shuffle: true
+    seed: 15
+    max_epochs: 15
+    patience: 3
+    global_batch_size: 128
+    batch_size: 4
+    limit_batches: 1.0 # Always float type
+    limit_train_batches: ${train.training_features.limit_batches}
+    limit_val_batches: ${train.training_features.limit_batches}
+    val_initial_epoch: 0
+    val_execution_freq: 1
+    limit_test_batches: ${train.training_features.limit_batches}
+    verbose: false
+    checkpoint: 1
+    device: cuda:0
+    save_checkpoints: ${general.save}
+    save_behavior_images: ${general.save}
+    checkpoint_save_freq: 1
+    model_checkpoints_path: ${checkpoint_path:${dataset.root_path}/checkpoints/${general.model_name}/${data.audio_duration}/${now:%Y-%m-%d}_${now:%H-%M-%S},${train.training_features.pretrained}}
+    num_workers: 0
+    initial_epoch: 0
+    use_weights_initializer: true
+    use_lr_scheduler: true
+    use_tensorboard: ${general.save}
+    pretrained: false
+    logger: true
+    pin_memory: {general.use_seed}
+    summarize:
+      use: true
+      depth: 3
+  hyperparameters:
+    optimizer: AdamW
+    learning_rate: 0.0009 #3.63e-4
+    weight_decay: 0.0001
+    momentum: 0.65
+    epsilon: 1e-08
+    find_learning_rate: false
+    use_adopt: false
+    alpha: 0.99
+    betas: [0.9, 0.999]
+  hparams_search:
+    use: true
+    percentage_usage: 0.25
+    n_trials: 10
+    max_epochs: 5
+    monitors:
+      - ${train.callbacks.params.monitor}
+      - val_acc_val_hs_total
+      - val_acc_val_sp_total
+      - val_acc_val_bp_total
+    directions:
+      - minimize   # for loss
+      - maximize   # for accuracy
+      - maximize   # for accuracy
+      - maximize   # for accuracy
+  callbacks:
+    params:
+      monitor: val_loss
+      mode: min
+      patience: 3
+      cycle_momentum: true
+      base_momentum: 0.8
+      max_momentum: 0.9
+      step_on_batch: false
+      save_top_k: -1
+
+    checkpoint:
+      monitor: ${train.callbacks.params.monitor}
+      mode: ${train.callbacks.params.mode}
+      save_top_k: 5
+      save_last: true
+      every_n_epochs: ${train.training_features.checkpoint_save_freq}
+      auto_insert_metric_name: false
+      filename: "${general.model_name}-epoch{epoch}-val_{${train.callbacks.params.monitor}:.5f}"
+
+    lr_scheduler:
+      use: true
+      monitor: ${train.callbacks.params.monitor}
+      mode: ${train.callbacks.params.mode}
+      type: LinearLR   # Options: [LinearLR, ReduceLROnPlateau, CosineAnnealingLR, CyclicLR, ExponentialLR, LambdaLR, MultiStepLR, StepLR]
+      interval: epoch     # "epoch" or "step"
+      warmup_steps_rate: 0.1  # percentage of total steps for warmup
+      frequency: 1        # how often to step
+      gamma: 0.1           # used for ExponentialLR, MultiStepLR, StepLR
+      scale_mode: cycle  # used for CyclicLR, LambdaLR
+      # --- WarmupLR ---
+      lr_end: 1e-7
+      power: 0.7
+      # --- LinearLR ---
+      start_factor: 1.0
+      end_factor: 0.1
+      total_iters: 10
+      # --- ReduceLROnPlateau ---
+      factor: 0.5
+      patience: 2
+      threshold: 1e-2
+      min_lr: 0.0
+      # --- CosineAnnealingLR ---
+      T_max: 50
+      eta_min: 0.0
+      # --- StepLR ---
+      step_size: 10
+      # --- CyclicLR ---
+      base_lr: ${train.hyperparameters.learning_rate}
+      max_lr: 0.1
+      step_size_up: 1000
+      step_size_down: 1000
+      modeCLR: triangular2
+      cycle_momentum: true
+      base_momentum: 0.8
+      max_momentum: 0.9
+      # --- ExponentialLR ---
+      # uses gamma
+      # --- MultiStepLR ---
+      milestones: [ 30, 60, 90 ]
+      # --- LambdaLR ---
+      scale_fn: null   # placeholder, implement in code
+
+    early_stopping:
+      modality: Validation
+      monitor: ${train.callbacks.params.monitor}
+      min_delta:
+        Avg Loss: 0.01
+      patience:
+        Avg Loss: 7
+data:
+  datasets: [noxi] #switchboard, noxi, eald
+  type: discrete
+  sample_rate: 16000
+  audio_mono: false
+  audio_duration: 10.0
+  flip_channels: false # If a single speaker model is to be trained, false is fine.
+  audio_normalize: true # If pre-processing is done beforehand, false is fine.
+  audio_overlap: 0.5
+  frame_hz: ${model.encoder.frame_hz}
+  # VAD
+  vad_hz: ${model.encoder.frame_hz}
+  vad_horizon: 2
+  va_history: false
+  va_history_times: [ 60, 30, 10, 5 ]
+  va_history_bins: 5
+  # Data
+  train_files: null
+  val_files: null
+  test_files: null
+  num_workers: 0
+  multimodal: ${train.training_features.multimodal}
+  pin_memory: true
+  use_cache: false
+  exclude_av_cache: true
+  preload_av: false
+  # Label
+  use_computed_vad: true
+  label_type: ${model.vap.type}
+  bin_times: ${model.vap.bin_times}
+  pre_frames: ${model.vap.pre_frames}
+  threshold_ratio: ${model.vap.bin_threshold}
+
+  common:
+    duration: ${data.audio_duration}
+    stride: ${data.audio_overlap}
+    normalize: true
+
+  audio:
+    sample_rate: 16000
+    audio_mono: false
+    use_clean: false
+    duration: ${data.common.duration}
+    normalize: ${data.common.normalize}
+    overlap: ${data.common.stride}
+    flip_channels: false
+    frame_hz: 50
+
+  image:
+    resize: true
+    width: ${general.width}
+    height: ${general.height}
+    channels: ${general.channels}
+    normalize: ${data.common.normalize}
+    use_grayscale: true
+    crop: true
+    compute_roi: true
+
+  video:
+    fps: 30
+    duration: ${data.common.duration}
+    normalize: ${data.common.normalize}
+    overlap: ${data.common.stride}
+    percentage_allowed_face_missing: 0.1
+    landmarks_type: global_landmarks
+    use_grayscale: ${data.image.use_grayscale}
+    resize: ${data.image.resize}
+    width: ${general.width}
+    height: ${general.height}
+    channels: ${general.channels}
+    crop: ${data.image.crop}
+    compute_roi: ${data.image.compute_roi}
+
+
+hydra:
+  run:
+    dir: ${hydra_run_dir:${general.save},${general.log_base_dir}}

@@ -1,0 +1,17 @@
+version: 1
+
+disable_existing_loggers: false
+
+formatters:
+  simple:
+    format: '%(asctime)s [%(threadName)s] [%(name)s] [%(levelname)s] (%(filename)s:%(lineno)s [%(funcName)s]) - %(message)s'
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: simple
+    stream: ext://sys.stdout
+
+root:
+  level: INFO
+  handlers: [console]

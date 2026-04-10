@@ -1,0 +1,144 @@
+log_dir: ${general.log_base_dir}
+shared_log_filename: main_${now:%H_%M_%S}.log
+format: '%(asctime)s [%(threadName)s] [%(name)s] [%(levelname)s] (%(filename)s:%(lineno)s [%(funcName)s]) - %(message)s'
+
+# Defaults (applied to all loggers unless overridden)
+default_level: WARNING         # Can be: TRACE, DEV, DEBUG, INFO, WARNING, ERROR, CRITICAL
+default_log_to_file: ${general.save}
+default_log_to_console: true
+default_per_class_file: false
+
+# Per-class logging behavior
+classes:
+  Main:
+    level: INFO
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  CModel:
+    level: DEBUG
+    log_to_console: true
+    new_file: true
+
+  CTrainer:
+    level: TRACE
+    log_to_console: true
+    new_file: false
+
+  Utils:
+    level: INFO
+    log_to_console: true
+    new_file: false
+
+  CDataLoader:
+    level: WARNING
+    log_to_console: false
+    new_file: false
+
+  COptimizer:
+    level: DEBUG
+    log_to_console: true
+    file_level: INFO
+    new_file: false
+
+  CTurnTakingMetrics:
+    level: INFO
+    #log_to_file: false
+    log_to_console: true
+    file_level: DEBUG
+    new_file: true
+
+  VAPModel:
+    level: DEBUG
+    #log_to_file: false
+    log_to_console: true
+    file_level: INFO
+    new_file: false
+
+  CConfigMultimodalTurnTakingDataset:
+    level: WARNING
+    #log_to_file: false
+    log_to_console: false
+    file_level: INFO
+    new_file: false
+
+  CMultimodalTurnTakingDataset:
+    level: WARNING
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  CMultimodalDataModule:
+    level: WARNING
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  CVAPModule:
+    level: INFO
+    #log_to_file: false
+    log_to_console: true
+    file_level: DEBUG
+    new_file: true
+
+  CTalkNetBackbone:
+    level: INFO
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  HoldShift:
+    level: WARNING
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  Backchannel:
+    level: WARNING
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  TurnTakingEvents:
+    level: WARNING
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  # Callbacks
+  CCustomMetric:
+    level: INFO
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  CCustomProgressBar:
+    level: INFO
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  CEarlyStoppingCallback:
+    level: INFO
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  CMetricPlotCallback:
+    level: WARNING
+    log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  CLearningRateSchedulerCallback:
+    level: INFO
+    #log_to_file: false
+    log_to_console: true
+    new_file: false
+
+  CManualStopCallback:
+    level: INFO
+    #log_to_file: false
+    log_to_console: true
+    new_file: false

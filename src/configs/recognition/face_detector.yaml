@@ -1,0 +1,21 @@
+face_detector:
+  models_folder: "${repo_root:}/../models/face"
+  model_name: "OpenCV" # "OpenCV", "DLib", "RetinaFace", "FaceRecognition"
+  threshold: 0.7
+  min_face_size: 30
+  max_num_faces: 1
+  keep_all_faces: false
+
+  tracking:
+    use: true
+    tracking_iou_threshold: 0.3
+    tracking_max_age: 5
+
+landmarks_detector:
+  models_folder: "${repo_root:}/../models/face"
+  model_name: "DLib" # "DLib", "MediaPipe", "FaceAlignment", "FaceRecognition"
+  threshold: 0.7
+  smooth_landmarks: true
+  smooth_window_size: 5
+  smooth_poly_order: 2
+  estimate_head_pose: true

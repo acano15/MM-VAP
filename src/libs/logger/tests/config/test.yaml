@@ -1,0 +1,40 @@
+log_dir: ./logs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+shared_log_filename: test_${now:%H_%M_%S}.log
+
+format: '%(asctime)s [%(threadName)s] [%(levelname)s] (%(filename)s:%(lineno)s [%(funcName)s]) - %(message)s'
+default_level: DEBUG
+default_log_to_file: false
+default_log_to_console: true
+default_per_class_file: false
+
+classes:
+  Test_logger1:
+    level: TRACE
+    log_to_file: true
+    log_to_console: true
+    file_level: WARNING
+    new_file: true
+
+  Test_logger2:
+    level: DEBUG
+    log_to_file: false
+    log_to_console: true
+
+  Test_logger3:
+    level: TRACE
+    log_to_file: true
+    log_to_console: true
+    file_level: TRACE
+    new_file: false
+
+  Test_logger4:
+    level: INFO
+    log_to_file: true
+    log_to_console: true
+    file_level: TRACE
+    new_file: true
+
+  Test_logger5:
+    level: ERROR
+    log_to_file: false
+    log_to_console: true
