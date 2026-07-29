@@ -1,3 +1,5 @@
+import os
+
 import torch
 from torch.utils.data import Dataset
 from turntaking.dataload.utils import (
@@ -21,9 +23,17 @@ from tqdm import tqdm
 import time
 import math
 
-import resource
-rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
-resource.setrlimit(resource.RLIMIT_NOFILE, (16384, rlimit[1]))
+if os.name != "nt":
+    # `resource` is a Unix-only standard-library module.
+    import resource
+
+    _, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+    desired_limit = (
+        16384
+        if hard_limit == resource.RLIM_INFINITY
+        else min(16384, hard_limit)
+    )
+    resource.setrlimit(resource.RLIMIT_NOFILE, (desired_limit, hard_limit))
 
 class CDialogAudioDataset(Dataset):
     def __init__(

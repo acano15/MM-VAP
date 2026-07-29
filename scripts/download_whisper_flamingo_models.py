@@ -13,14 +13,23 @@ target_dir = base_path / "pretrained_models" / "whisper_flamingo"
 target_dir.mkdir(parents=True, exist_ok=True)
 
 
+progress_state = {"last_percent": -1}
+
+
 def show_progress(block_num, block_size, total_size):
-    """Progress hook for urllib.request.urlretrieve."""
+    """Progress hook for urllib.request.urlretrieve, throttled for CI logs."""
     downloaded = block_num * block_size
-    percent = min(100, downloaded * 100 / total_size) if total_size > 0 else 0
-    sys.stdout.write(f"\rDownloading... {percent:6.2f}%")
+    percent = min(100, int(downloaded * 100 / total_size)) if total_size > 0 else 0
+    if block_num == 0:
+        progress_state["last_percent"] = -1
+    if percent == progress_state["last_percent"]:
+        return
+    progress_state["last_percent"] = percent
+    sys.stdout.write(f"\rDownloading... {percent:3d}%")
     sys.stdout.flush()
 
 
+failures = []
 for url in urls:
     file_name = url.split("/")[-1]
     dest_path = target_dir / file_name
@@ -35,3 +44,11 @@ for url in urls:
         print(f"\nSaved to: {dest_path}\n")
     except Exception as e:
         print(f"\nFailed to download {url}: {e}\n")
+        # Do not mistake an incomplete download for a valid checkpoint on the
+        # next run.
+        dest_path.unlink(missing_ok=True)
+        failures.append(url)
+
+if failures:
+    print(f"Failed to download {len(failures)} checkpoint(s).", file=sys.stderr)
+    sys.exit(1)

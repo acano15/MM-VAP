@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 
-base_path = Path(__file__).resolve().parents[2]
+base_path = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(base_path))
 sys.path = list(dict.fromkeys(sys.path))
 

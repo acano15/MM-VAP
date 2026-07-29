@@ -1,0 +1,15 @@
+# Optional face-detector backends. Install dlib from Conda first, as documented
+# in the README. The default OpenCV + dlib configuration only needs the core file.
+-r requirements_windows.txt
+
+face-alignment==1.4.1
+face-recognition==1.3.0
+mediapipe==0.10.21
+albumentations==2.0.8
+iglovikov-helper-functions==0.0.53
+scikit-image==0.24.0
+jax==0.4.38
+jaxlib==0.4.38
+# 0.0.8 pins torch==1.9.0. Version 0.0.1 has the API used by this repository
+# without forcing that obsolete PyTorch release.
+retinaface-pytorch==0.0.1

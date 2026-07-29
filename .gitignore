@@ -48,6 +48,8 @@ Thumbs.db
 
 # Large media files
 *.txt
+!requirements_ubuntu_optional.txt
+!requirements_windows_optional.txt
 *.mp4
 *.tiff
 *.avi

@@ -79,7 +79,7 @@ train:
     use_tensorboard: ${general.save}
     pretrained: false
     logger: true
-    pin_memory: {general.use_seed}
+    pin_memory: ${general.use_seed}
     summarize:
       use: true
       depth: 3

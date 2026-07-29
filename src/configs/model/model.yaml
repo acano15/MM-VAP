@@ -19,7 +19,7 @@ encoder: &Encoder
     dilation: [1]
     activation: "GELU"
   cpc:
-    model_path: "asset/cpc/60k_epoch4-d0f474de.pt"
+    model_path: "assets/cpc/60k_epoch4-d0f474de.pt"
   wav2vec:
     type: "mms"
   hubert:
@@ -46,7 +46,7 @@ backbone: &Backbone
     pretrained: true
     output_dim: ${model.backbone.output_dim}
     freeze: ${model.freeze}
-    model_path: "asset/asd/pretrain_TalkSet.model"
+    model_path: "assets/asd/pretrain_TalkSet.model"
     LoRA:
       <<: *LoRA
       rank: 16
@@ -231,10 +231,10 @@ non_verbal_cond:
       <<: *model_kwargs
   face:
     dim_face_encoder: 512
-    model_path: "asset/FormerDFER/DFER_encoder_weight_only.pt"
+    model_path: "assets/FormerDFER/DFER_encoder_weight_only.pt"
     detector:
-      face_model_path: "asset/face_detector/mmod_human_face_detector.dat"
-      landmark_model_path: "asset/face_detector/shape_predictor_5_face_landmarks.dat"
+      face_model_path: "assets/face_detector/mmod_human_face_detector.dat"
+      landmark_model_path: "assets/face_detector/shape_predictor_5_face_landmarks.dat"
 
   linear:
     output_size: 256
@@ -257,7 +257,7 @@ vap:
   # bin_times: [.05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05,  .05]
   pre_frames: 2
   bin_threshold: 0.5
-  model_path: "asset/vap/vap_state_dict_eng_20hz_2500msec.pt"
+  model_path: "assets/vap/vap_state_dict_eng_20hz_2500msec.pt"
 
 configuration:
   # Training and data
