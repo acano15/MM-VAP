@@ -18,12 +18,12 @@ import hydra
 from omegaconf import DictConfig
 import matplotlib.pyplot as plt
 
-from objective import ObjectiveVAP
-from events import TurnTakingEvents, EventConfig
-from prepare_data.multimodal_datamodule import CMultimodalDataModule
-from configs.configuration import CBaseConfig
-from logger import load_logger_config, getLogger, set_logger_level
-from utils import (get_run_name, recursive_clean, OmegaConf, ensure_dataset_files,
+from src.libs.events.objective import ObjectiveVAP
+from src.libs.events import TurnTakingEvents, CEventConfig
+from src.libs.prepare_data.multimodal_datamodule import CMultimodalDataModule
+from src.configs.configuration import CBaseConfig
+from src.libs.logger import load_logger_config, getLogger, set_logger_level
+from src.libs.utils import (get_run_name, recursive_clean, OmegaConf, ensure_dataset_files,
                    plot_mel_spectrogram, plot_vad, plot_waveform, plot_event, plot_stereo_mel_spec,
                    plot_next_speaker_probs, log_mel_spectrogram)
 
@@ -95,7 +95,7 @@ def main(cfg_dict: DictConfig) -> None:
         }
     dm = CMultimodalDataModule(**kwargs)
 
-    conf = EventConfig(
+    conf = CEventConfig(
         metric_time=0.05,
         equal_hold_shift=False,
         sh_pre_cond_time=0.5,

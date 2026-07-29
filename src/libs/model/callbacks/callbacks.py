@@ -1,8 +1,33 @@
 import random
-import transforms as VT
+import torch
+import torch.nn as nn
+import torchaudio.functional as AF
 import pytorch_lightning as pl
 
 from src.libs.logger.log import getLogger
+
+
+class _WaveformAugmentation(nn.Module):
+    """Small, dependency-free waveform augmenter used by the optional callback."""
+
+    def __init__(self, probability, noise_amplitude, pitch_steps, sample_rate):
+        super().__init__()
+        self.probability = probability
+        self.noise_amplitude = noise_amplitude
+        self.pitch_steps = tuple(pitch_steps)
+        self.sample_rate = sample_rate
+
+    def forward(self, waveform):
+        if random.random() >= self.probability:
+            return waveform
+
+        result = waveform
+        if self.noise_amplitude > 0:
+            result = result + torch.randn_like(result) * self.noise_amplitude
+        if self.pitch_steps:
+            steps = random.choice(self.pitch_steps)
+            result = AF.pitch_shift(result, self.sample_rate, steps)
+        return result
 
 
 class AudioAugmentationCallback(pl.Callback):
@@ -16,14 +41,14 @@ class AudioAugmentationCallback(pl.Callback):
         sample_rate: int = 16_000,
         device: str = "cpu",
     ):
-        self.augmentation = VT.Augmentation(
+        # `transforms==0.2.1` on PyPI is an unrelated, Python-2-era HTML
+        # package.  Keep this augmentation local so importing the callbacks is
+        # reliable on Python 3.10.
+        self.augmentation = _WaveformAugmentation(
             probability=probability,
             noise_amplitude=noise_amplitude,
             pitch_steps=pitch_steps,
-            freq_mask_param=freq_mask_param,
-            iid_masks=iid_masks,
             sample_rate=sample_rate,
-            device=device,
         )
 
     def on_train_batch_start(self, trainer, pl_module, batch, *args, **kwargs) -> None:

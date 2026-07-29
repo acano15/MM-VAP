@@ -1,9 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-FILE=../requirements_ubuntu.txt
-
-while read -r pkg; do
-    [[ -z "$pkg" || "$pkg" =~ ^# ]] && continue
-    echo "Installing $pkg..."
-    pip install "$pkg" || echo "Failed to install: $pkg"
-done < "$FILE"
+REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+python -m pip install -r "$REPO_DIR/requirements_ubuntu.txt"
