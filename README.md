@@ -15,6 +15,7 @@ environment_windows.yml   Windows conda environment
 requirements_ubuntu.txt   Ubuntu pip requirements
 requirements_ubuntu_optional.txt  Optional face-detector backends
 requirements_windows.txt  Windows pip requirements
+requirements_windows_optional.txt  Optional Windows face-detector backends
 ```
 
 # Voice Activity Projection (VAP)
@@ -26,10 +27,11 @@ It is designed to run on both **Windows** and **Ubuntu** systems with GPU accele
 
 ### Supported environment
 
-The tested Ubuntu stack is Ubuntu 22.04, Python 3.10.16, PyTorch 2.6.0, and the
-CUDA 12.4 PyTorch wheels. The wheels include the CUDA runtime and cuDNN; a
-separate CUDA toolkit installation is not required. GPU execution still needs
-an NVIDIA driver compatible with CUDA 12.4. Check it with `nvidia-smi`.
+The tested stack is Python 3.10.16, PyTorch 2.6.0, and the CUDA 12.4 PyTorch
+wheels on Ubuntu 22.04 and 64-bit Windows 11. The wheels include the CUDA
+runtime and cuDNN; a separate CUDA toolkit installation is not required. GPU
+execution still needs an NVIDIA driver compatible with CUDA 12.4. Check it
+with `nvidia-smi`.
 
 The repository vendors the CPC implementation and obtains the matching
 Fairseq source from the `external/av_hubert` submodule. Do not install CPC or a
@@ -37,24 +39,80 @@ different Fairseq release separately.
 
 ### Installing
 
-#### Windows 10/11
+#### Windows 11 (64-bit)
 
-1. Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
-2. Verify NVIDIA driver supports CUDA 12.1:
-```bash
-nvidia-smi
+Install these host tools first:
+
+1. [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/)
+2. [Git for Windows](https://git-scm.com/download/win), including Git LFS
+3. A current NVIDIA driver when GPU training is required
+
+Use a 64-bit **Miniconda Prompt** or PowerShell. Verify that `nvidia-smi` works;
+do not install a separate CUDA toolkit just for this project.
+
+Clone the complete repository and resolve its Git LFS assets:
+
+```powershell
+git clone --recurse-submodules https://github.com/acano15/MM-VAP.git
+Set-Location MM-VAP
+git submodule update --init --recursive
+git lfs install
+git lfs pull
 ```
 
-To create the environment:
-```bash
+From the repository root, create the complete environment (core dependencies
+plus every optional face-detector backend):
+
+```powershell
 conda env create -f environment_windows.yml
 conda activate mm-vap
-pip install torch==2.5.0+cu121 torchvision==0.20.0+cu121 torchaudio==2.5.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
-python scripts/install_packages.py
-pip install --no-build-isolation git+https://github.com/facebookresearch/CPC_audio.git
-pip install --no-build-isolation --no-deps git+https://github.com/
-pytorch/fairseq.git@afc77bdf4bb51453ce76f1572ef2ee6ddcda8eeb
 ```
+
+The environment file installs `dlib` from conda-forge because PyPI does not
+publish an official Windows wheel. This avoids requiring Visual Studio and a
+local C++ build. Do not subsequently run `pip install dlib`.
+
+For a smaller environment containing only the default OpenCV + dlib backend,
+create the environment explicitly and then install the core requirements:
+
+```powershell
+conda create -n mm-vap -c conda-forge --strict-channel-priority `
+  python=3.10.16 pip=24.0 setuptools=69.5.1 wheel=0.43.0 `
+  dlib=19.24.5 ffmpeg -y
+conda activate mm-vap
+python -m pip install -r requirements_windows.txt
+```
+
+To add all alternative face backends later:
+
+```powershell
+python -m pip install -r requirements_windows_optional.txt
+```
+
+The repository already contains the compatible CPC code and gets Fairseq from
+the `external/av_hubert` submodule. Do not install separate CPC or Fairseq
+packages. In particular, `fairseq==1.0.0a0+afc77bd` is not a PyPI release.
+
+Download the checkpoints required by the default Whisper-Flamingo backbone:
+
+```powershell
+python scripts/download_whisper_flamingo_models.py
+```
+
+Validate the clean environment before preparing data:
+
+```powershell
+where.exe python
+python -m pip check
+python -c "import dlib, torch, torchvision, torchaudio, cv2; print(torch.__version__, torch.version.cuda, torch.cuda.is_available())"
+python src/train_mm_vap.py --help
+```
+
+The expected PyTorch version prefix is `2.6.0+cu124`. A `False` CUDA result
+means the environment installed correctly but Windows cannot expose a supported
+NVIDIA GPU/driver. If Conda reports that `mm-vap` already exists, either use a
+new environment name or deliberately remove the old environment before retrying;
+do not repair a partially upgraded environment package by package.
 #### Ubuntu 22.04
 
 Install the system build, audio, video, Git LFS, and dlib prerequisites:
