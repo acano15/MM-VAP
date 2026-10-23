@@ -1,0 +1,8 @@
+{
+    "test":
+    {
+        "save_audio": 1,
+        "save_interval": 10,
+        "audio_path": "./audio_files_generated"
+    }
+}

@@ -1,0 +1,13 @@
+audio_io:
+  chunk_size: 4000
+  audio_format:
+    num_channels: 1
+    sample_rate: ${data.sample_rate}
+    format: float
+
+image_io:
+  image_format:
+    fps: ${data.video.fps}
+    width: 640
+    height: 480
+    num_channels: 3

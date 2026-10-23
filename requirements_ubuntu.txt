@@ -60,6 +60,8 @@ soundfile==0.13.1
 matplotlib==3.9.4
 natsort==8.4.0
 pympler==1.1
+objgraph==3.6.1
+psutil==5.9.8
 pynput==1.7.7
 pytest==8.3.5
 PyYAML==6.0.2

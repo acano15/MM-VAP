@@ -16,6 +16,11 @@ classes:
     log_to_console: true
     new_file: false
 
+  CVADExtractor:
+    level: INFO
+    log_to_console: true
+    new_file: false
+
   CModel:
     level: DEBUG
     log_to_console: true

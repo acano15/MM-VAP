@@ -7,7 +7,8 @@ defaults:
   - hydra: default
   #- override hydra/job_logging: custom
   - hparams_search: null
-  - recognition: face_detector
+  - recognition: [face_detector, vad]
+  - io: io
 
 general:
   save: false
