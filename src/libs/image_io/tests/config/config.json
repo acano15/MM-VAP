@@ -1,0 +1,31 @@
+{
+  "test":
+  {
+    "logger":
+    {
+      "log_level": "INFO"
+    },
+    "save_video": 1,
+    "save_interval": 10,
+    "video_path": "./video_files_generated",
+    "image_io":
+    {
+      "clip_size": 15,
+      "use_format": 0,
+      "image_format":
+      {
+        "fps": 20,
+        "width": 224,
+        "height": 224,
+        "num_channels": 3
+      },
+      "image_format_output":
+      {
+        "fps": 20,
+        "width": 224,
+        "height": 224,
+        "num_channels": 3
+      }
+    }
+  }
+}

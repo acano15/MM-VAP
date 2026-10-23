@@ -1,0 +1,32 @@
+vad:
+  type: Silero
+  models_folder: "${repo_root:}/assets/models/speech/VAD"
+  threshold: ${preprocessing.audio_processing.silence_thld}
+  language: ${preprocessing.audio_processing.audio_language}
+  window_size_samples: 1024
+  speech_pad_ms: ${preprocessing.audio_processing.speech_pad_ms}
+
+  chunk_selection_algorithm:
+    use_buffer_size_proportion: false
+    init_padding_chunks: 0
+    end_padding_chunks: 0
+    speech_buffer_size_in_chunks: 3
+    silence_buffer_size_in_chunks: 3
+    percentage_chunks_speech_activation: 1.0
+    percentage_chunks_silence_activation: 1.0
+
+  Silero:
+    silence_btwn_words_languages:
+      ES: 100
+      EN: 100
+    min_words_length_languages:
+      ES: 50
+      EN: 50
+
+vad_extractor:
+  paths:
+    - ${dataset.path}
+  recursive: true
+  overwrite: false
+  timeout: 300.0
+  output_name: vad_extracted.txt

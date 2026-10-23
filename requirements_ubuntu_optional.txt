@@ -16,3 +16,6 @@ opencv-python-headless==4.11.0.86
 # 0.0.8 incorrectly pins torch==1.9.0. Version 0.0.1 provides the API used by
 # face_detector_retinaface.py without forcing an obsolete PyTorch release.
 retinaface-pytorch==0.0.1
+
+# Microphone/playback and waveform display support for audio_io.
+pyformulas==0.2.11

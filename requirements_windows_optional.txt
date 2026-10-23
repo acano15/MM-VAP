@@ -13,3 +13,7 @@ jaxlib==0.4.38
 # 0.0.8 pins torch==1.9.0. Version 0.0.1 has the API used by this repository
 # without forcing that obsolete PyTorch release.
 retinaface-pytorch==0.0.1
+
+# Microphone/playback and waveform display support for audio_io.
+pyformulas==0.2.11
+pynput==1.7.7

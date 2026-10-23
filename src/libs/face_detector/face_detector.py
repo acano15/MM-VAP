@@ -42,7 +42,7 @@ class CFaceDetector:
         else:
             raise TypeError("cfg_dict must be a dict, omegaconf.DictConfig, or None")
 
-        model_name = cfg_dict.model_name
+        model_name = config.model_name
 
         # Map configuration name → module file
         module_map = {
