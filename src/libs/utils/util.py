@@ -209,16 +209,16 @@ def vad_list_to_onehot_windowed(
     n_frames = time_to_frames(duration, hop_time)
     n_channels = len(vad_list)
     vad_tensor = torch.zeros((n_frames, n_channels), dtype=torch.float32)
+    window_end_time = start_time + duration
 
     for ch, ch_vad in enumerate(vad_list):
         for seg_start, seg_end in ch_vad:
             # Skip if VAD segment is completely outside current reference window
-            if seg_end <= start_time or seg_start >= end_time:
+            if seg_end <= start_time or seg_start >= window_end_time:
                 continue
 
-            # Clip to [start_time, end_time]
             clipped_start = max(seg_start, start_time)
-            clipped_end = min(seg_end, end_time)
+            clipped_end = min(seg_end, window_end_time)
 
             # Frame indices relative to start_time reference
             rel_start = time_to_frames(clipped_start - start_time, hop_time)
